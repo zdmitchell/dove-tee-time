@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import json
-from datetime import date, time
+from datetime import date, time, datetime
 from calendar import month_name
 
 fname = 'settings.json'
@@ -62,3 +62,12 @@ except NameError:
    exit()
 
 day_link.click()
+
+tee_times = browser.find_elements_by_css_selector('table.member_sheet_table tbody tr a.teetime_button')
+
+for tee_time_link in tee_times:
+   tee_time_text = tee_time_link.get_attribute("textContent")
+   tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
+
+   if tee_time >= earliest_time:
+      print(tee_time)
