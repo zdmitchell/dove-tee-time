@@ -76,8 +76,19 @@ def main():
       tee_time_text = tee_time_link.get_attribute("textContent")
       tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
 
-      if tee_time >= earliest_time:
-         print(tee_time)
+      if tee_time >= earliest_time and count_open_spots(tee_time_row) >= settings['numPlayers']:
+         tee_time_link.click()
+         break
+
+def count_open_spots(tee_time_row):
+   open_spots = 0
+   player_slots = tee_time_row.find_elements_by_css_selector('td.sP')
+
+   for player_slot in player_slots:
+      if player_slot.get_attribute("textContent") == "":
+         open_spots = open_spots + 1
+
+   return open_spots
 
 if __name__ == '__main__':
    main()
