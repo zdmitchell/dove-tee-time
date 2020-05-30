@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 import json
 from datetime import date, time, datetime
 from calendar import month_name
@@ -64,9 +65,14 @@ def main():
 
    day_link.click()
 
-   tee_times = browser.find_elements_by_css_selector('table.member_sheet_table tbody tr a.teetime_button')
+   tee_time_rows = browser.find_elements_by_css_selector('table.member_sheet_table tbody tr')
 
-   for tee_time_link in tee_times:
+   for tee_time_row in tee_time_rows:
+      try:
+         tee_time_link = tee_time_row.find_element_by_css_selector('a.teetime_button')
+      except NoSuchElementException:
+         continue
+
       tee_time_text = tee_time_link.get_attribute("textContent")
       tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
 
