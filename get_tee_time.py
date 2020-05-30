@@ -76,7 +76,7 @@ def main():
       tee_time_text = tee_time_link.get_attribute("textContent")
       tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
 
-      if tee_time >= earliest_time and count_open_spots(tee_time_row) >= settings['numPlayers']:
+      if tee_time >= earliest_time and count_open_spots(tee_time_row) >= len(settings['otherPlayers']) + 1:
          tee_time_link.click()
          break
 
