@@ -6,6 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 import json
 from datetime import date, time, datetime
 from calendar import month_name
+import sys
 
 def main():
    fname = 'settings.json'
@@ -101,6 +102,9 @@ def main():
 
       if not nineHolesCheckbox.get_attribute('disabled'):
          nineHolesCheckbox.click()
+
+   if '-d' in sys.argv or 'debug' in sys.argv:
+      exit()
 
    browser.find_element_by_css_selector('.request_container .submit_request_button').click()
 
