@@ -23,7 +23,7 @@ def main():
    today = date.today()
 
    day_to_book = date(today.year, settings['month'], settings['day'])
-   earliest_time = time(settings['earliestTime'], 0)
+   earliest_time = datetime.strptime(settings['earliestTime'], '%I:%M %p').time()
 
    browser = webdriver.Firefox()
    browser.get("https://web.foretees.com/v5/servlet/LoginPrompt?cn=dovecanyonclub")
