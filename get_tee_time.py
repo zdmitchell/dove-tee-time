@@ -80,6 +80,20 @@ def main():
          tee_time_link.click()
          break
 
+   WebDriverWait(browser, delay).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.partner_list option')))
+
+   otherPlayers = settings['otherPlayers']
+
+   for player in otherPlayers:
+      name = player['firstName'] + ' ' + player['lastName']
+
+      try:
+         player_item = browser.find_element_by_css_selector('option[value="%s"' % name)
+      except NoSuchElementException:
+         print("Player %s is not in your Name List" % name)
+      else:
+         player_item.click()
+
 def count_open_spots(tee_time_row):
    open_spots = 0
    player_slots = tee_time_row.find_elements_by_css_selector('td.sP')
