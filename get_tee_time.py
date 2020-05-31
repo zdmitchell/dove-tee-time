@@ -7,10 +7,12 @@ import json
 from datetime import date, time, datetime
 from calendar import month_name
 import sys
+import time as system_time
 
 def main():
    fname = 'settings.json'
    delay = 10 # seconds max wait
+   refresh_retry_time = 60
 
    try:
       settings_file = open(fname)
@@ -36,35 +38,47 @@ def main():
    WebDriverWait(browser, delay).until(EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
    browser.get("https://web.foretees.com/v5/dovecanyonclub_golf_m0/Member_select")
 
-   calendar_months = browser.find_elements_by_class_name('ui-datepicker-inline')
+   start = system_time.time()
 
-   for month in calendar_months:
-      title = month.find_element_by_class_name('ui-datepicker-title')
+   while system_time.time() - start < refresh_retry_time:
+      calendar_months = browser.find_elements_by_class_name('ui-datepicker-inline')
 
-      if title.find_element_by_class_name('ui-datepicker-month').get_attribute("textContent") == month_name[day_to_book.month]:
-         month_to_find = month
-         break
+      for month in calendar_months:
+         title = month.find_element_by_class_name('ui-datepicker-title')
 
-   try:
-      month_to_find
-   except NameError:
-      print("Can't book tee time for month you specified")
-      exit()
+         if title.find_element_by_class_name('ui-datepicker-month').get_attribute("textContent") == month_name[day_to_book.month]:
+            month_to_find = month
+            break
 
-   selectable_days = month.find_elements_by_css_selector('tbody a.ui-state-default')
+      try:
+         month_to_find
+      except NameError:
+         browser.refresh()
+         continue
 
-   for calendar_day in selectable_days:
-      if int(calendar_day.get_attribute("textContent")) == day_to_book.day:
-         day_link = calendar_day
+      selectable_days = month.find_elements_by_css_selector('tbody td[title="Tee Times Available"] a.ui-state-default')
+
+      for calendar_day in selectable_days:
+         if int(calendar_day.get_attribute("textContent")) == day_to_book.day:
+            day_link = calendar_day
+            break
+
+      try:
+         day_link
+      except NameError:
+         browser.refresh()
+         continue
+      else:
          break
 
    try:
       day_link
    except NameError:
       print("Cannot make tee times for the day you specified")
+      browser.close()
       exit()
-
-   day_link.click()
+   else:
+      day_link.click()
 
    tee_time_rows = browser.find_elements_by_css_selector('table.member_sheet_table tbody tr')
 
