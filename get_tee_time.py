@@ -28,10 +28,7 @@ def main():
     browser = webdriver.Firefox()
     browser.get(FORETEES_URL + "servlet/LoginPrompt?cn=dovecanyonclub")
 
-    browser.find_element_by_id('user_name').send_keys(settings['username'])
-    browser.find_element_by_id('password').send_keys(settings['password'])
-    browser.find_element_by_css_selector(
-        '#login input[type="submit"]').submit()
+    login(browser, settings)
 
     WebDriverWait(browser, delay).until(
         EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
@@ -144,6 +141,13 @@ def readSettingsFile():
         settings = json.load(settings_file)
 
     return settings
+
+
+def login(browser, settings):
+    browser.find_element_by_id('user_name').send_keys(settings['username'])
+    browser.find_element_by_id('password').send_keys(settings['password'])
+    browser.find_element_by_css_selector(
+        '#login input[type="submit"]').submit()
 
 
 def count_open_spots(tee_time_row):
