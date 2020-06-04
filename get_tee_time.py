@@ -11,134 +11,152 @@ import time as system_time
 
 SETTINGS_FNAME = "settings.json"
 
+
 def main():
-   delay = 10 # seconds max wait
-   refresh_retry_time = 60
+    delay = 10  # seconds max wait
+    refresh_retry_time = 60
 
-   settings = readSettingsFile()
+    settings = readSettingsFile()
 
-   today = date.today()
+    today = date.today()
 
-   day_to_book = date(today.year, settings['month'], settings['day'])
-   earliest_time = datetime.strptime(settings['earliestTime'], '%I:%M %p').time()
+    day_to_book = date(today.year, settings['month'], settings['day'])
+    earliest_time = datetime.strptime(
+        settings['earliestTime'], '%I:%M %p').time()
 
-   browser = webdriver.Firefox()
-   browser.get("https://web.foretees.com/v5/servlet/LoginPrompt?cn=dovecanyonclub")
+    browser = webdriver.Firefox()
+    browser.get(
+        "https://web.foretees.com/v5/servlet/LoginPrompt?cn=dovecanyonclub")
 
-   browser.find_element_by_id('user_name').send_keys(settings['username'])
-   browser.find_element_by_id('password').send_keys(settings['password'])
-   browser.find_element_by_css_selector('#login input[type="submit"]').submit()
+    browser.find_element_by_id('user_name').send_keys(settings['username'])
+    browser.find_element_by_id('password').send_keys(settings['password'])
+    browser.find_element_by_css_selector(
+        '#login input[type="submit"]').submit()
 
-   WebDriverWait(browser, delay).until(EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
-   browser.get("https://web.foretees.com/v5/dovecanyonclub_golf_m0/Member_select")
+    WebDriverWait(browser, delay).until(
+        EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
+    browser.get(
+        "https://web.foretees.com/v5/dovecanyonclub_golf_m0/Member_select")
 
-   start = system_time.time()
+    start = system_time.time()
 
-   while system_time.time() - start < refresh_retry_time:
-      calendar_months = browser.find_elements_by_class_name('ui-datepicker-inline')
+    while system_time.time() - start < refresh_retry_time:
+        calendar_months = browser.find_elements_by_class_name(
+            'ui-datepicker-inline')
 
-      for month in calendar_months:
-         title = month.find_element_by_class_name('ui-datepicker-title')
+        for month in calendar_months:
+            title = month.find_element_by_class_name('ui-datepicker-title')
 
-         if title.find_element_by_class_name('ui-datepicker-month').get_attribute("textContent") == month_name[day_to_book.month]:
-            month_to_find = month
+            if title.find_element_by_class_name('ui-datepicker-month').get_attribute("textContent") == month_name[day_to_book.month]:
+                month_to_find = month
+                break
+
+        try:
+            month_to_find
+        except NameError:
+            browser.refresh()
+            continue
+
+        selectable_days = month.find_elements_by_css_selector(
+            'tbody td[title="Tee Times Available"] a.ui-state-default')
+
+        for calendar_day in selectable_days:
+            if int(calendar_day.get_attribute("textContent")) == day_to_book.day:
+                day_link = calendar_day
+                break
+
+        try:
+            day_link
+        except NameError:
+            browser.refresh()
+            continue
+        else:
             break
 
-      try:
-         month_to_find
-      except NameError:
-         browser.refresh()
-         continue
+    try:
+        day_link
+    except NameError:
+        print("Cannot make tee times for the day you specified")
+        browser.close()
+        exit()
+    else:
+        day_link.click()
 
-      selectable_days = month.find_elements_by_css_selector('tbody td[title="Tee Times Available"] a.ui-state-default')
+    tee_time_rows = browser.find_elements_by_css_selector(
+        'table.member_sheet_table tbody tr')
 
-      for calendar_day in selectable_days:
-         if int(calendar_day.get_attribute("textContent")) == day_to_book.day:
-            day_link = calendar_day
+    for tee_time_row in tee_time_rows:
+        try:
+            tee_time_link = tee_time_row.find_element_by_css_selector(
+                'a.teetime_button')
+        except NoSuchElementException:
+            continue
+
+        tee_time_text = tee_time_link.get_attribute("textContent")
+        tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
+
+        if tee_time >= earliest_time and count_open_spots(tee_time_row) >= len(settings['otherPlayers']) + 1:
+            tee_time_link.click()
             break
 
-      try:
-         day_link
-      except NameError:
-         browser.refresh()
-         continue
-      else:
-         break
+    WebDriverWait(browser, delay).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '.partner_list option')))
 
-   try:
-      day_link
-   except NameError:
-      print("Cannot make tee times for the day you specified")
-      browser.close()
-      exit()
-   else:
-      day_link.click()
+    otherPlayers = settings['otherPlayers']
 
-   tee_time_rows = browser.find_elements_by_css_selector('table.member_sheet_table tbody tr')
+    for player in otherPlayers:
+        name = player['firstName'] + ' ' + player['lastName']
 
-   for tee_time_row in tee_time_rows:
-      try:
-         tee_time_link = tee_time_row.find_element_by_css_selector('a.teetime_button')
-      except NoSuchElementException:
-         continue
+        try:
+            player_item = browser.find_element_by_css_selector(
+                'option[value="%s"' % name)
+        except NoSuchElementException:
+            print("Player %s is not in your Name List" % name)
+        else:
+            player_item.click()
 
-      tee_time_text = tee_time_link.get_attribute("textContent")
-      tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
+    player_rows = browser.find_elements_by_css_selector(
+        '.request_container tr.slot_player_row')
 
-      if tee_time >= earliest_time and count_open_spots(tee_time_row) >= len(settings['otherPlayers']) + 1:
-         tee_time_link.click()
-         break
+    for player_row in player_rows:
+        nineHolesCheckbox = player_row.find_element_by_css_selector(
+            'input.slot_9holes')
 
-   WebDriverWait(browser, delay).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.partner_list option')))
+        if not nineHolesCheckbox.get_attribute('disabled'):
+            nineHolesCheckbox.click()
 
-   otherPlayers = settings['otherPlayers']
+    if '-d' in sys.argv or 'debug' in sys.argv:
+        exit()
 
-   for player in otherPlayers:
-      name = player['firstName'] + ' ' + player['lastName']
+    browser.find_element_by_css_selector(
+        '.request_container .submit_request_button').click()
 
-      try:
-         player_item = browser.find_element_by_css_selector('option[value="%s"' % name)
-      except NoSuchElementException:
-         print("Player %s is not in your Name List" % name)
-      else:
-         player_item.click()
+    browser.close()
 
-   player_rows = browser.find_elements_by_css_selector('.request_container tr.slot_player_row')
-
-   for player_row in player_rows:
-      nineHolesCheckbox = player_row.find_element_by_css_selector('input.slot_9holes')
-
-      if not nineHolesCheckbox.get_attribute('disabled'):
-         nineHolesCheckbox.click()
-
-   if '-d' in sys.argv or 'debug' in sys.argv:
-      exit()
-
-   browser.find_element_by_css_selector('.request_container .submit_request_button').click()
-
-   browser.close()
 
 def readSettingsFile():
-   try:
-      settings_file = open(SETTINGS_FNAME)
-   except FileNotFoundError:
-      print("File %s not found" % SETTINGS_FNAME)
-      exit()
+    try:
+        settings_file = open(SETTINGS_FNAME)
+    except FileNotFoundError:
+        print("File %s not found" % SETTINGS_FNAME)
+        exit()
 
-   with settings_file:
-      settings = json.load(settings_file)
+    with settings_file:
+        settings = json.load(settings_file)
 
-   return settings
+    return settings
+
 
 def count_open_spots(tee_time_row):
-   open_spots = 0
-   player_slots = tee_time_row.find_elements_by_css_selector('td.sP')
+    open_spots = 0
+    player_slots = tee_time_row.find_elements_by_css_selector('td.sP')
 
-   for player_slot in player_slots:
-      if player_slot.get_attribute("textContent") == "":
-         open_spots = open_spots + 1
+    for player_slot in player_slots:
+        if player_slot.get_attribute("textContent") == "":
+            open_spots = open_spots + 1
 
-   return open_spots
+    return open_spots
+
 
 if __name__ == '__main__':
-   main()
+    main()
