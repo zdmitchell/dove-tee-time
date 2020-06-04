@@ -9,19 +9,13 @@ from calendar import month_name
 import sys
 import time as system_time
 
+SETTINGS_FNAME = "settings.json"
+
 def main():
-   fname = 'settings.json'
    delay = 10 # seconds max wait
    refresh_retry_time = 60
 
-   try:
-      settings_file = open(fname)
-   except FileNotFoundError:
-      print("File %s not found" % fname)
-      exit()
-
-   with settings_file:
-      settings = json.load(settings_file)
+   settings = readSettingsFile()
 
    today = date.today()
 
@@ -123,6 +117,18 @@ def main():
    browser.find_element_by_css_selector('.request_container .submit_request_button').click()
 
    browser.close()
+
+def readSettingsFile():
+   try:
+      settings_file = open(SETTINGS_FNAME)
+   except FileNotFoundError:
+      print("File %s not found" % SETTINGS_FNAME)
+      exit()
+
+   with settings_file:
+      settings = json.load(settings_file)
+
+   return settings
 
 def count_open_spots(tee_time_row):
    open_spots = 0
