@@ -18,9 +18,6 @@ REFRESH_RETRY_TIME = 60
 def main():
     settings = readSettingsFile()
 
-    today = date.today()
-
-    day_to_book = date(today.year, settings['month'], settings['day'])
     earliest_time = datetime.strptime(
         settings['earliestTime'], '%I:%M %p').time()
 
@@ -33,49 +30,7 @@ def main():
         EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
     browser.get(FORETEES_URL + "dovecanyonclub_golf_m0/Member_select")
 
-    start = system_time.time()
-
-    while system_time.time() - start < REFRESH_RETRY_TIME:
-        calendar_months = browser.find_elements_by_class_name(
-            'ui-datepicker-inline')
-
-        for month in calendar_months:
-            title = month.find_element_by_class_name('ui-datepicker-title')
-
-            if title.find_element_by_class_name('ui-datepicker-month').get_attribute("textContent") == month_name[day_to_book.month]:
-                month_to_find = month
-                break
-
-        try:
-            month_to_find
-        except NameError:
-            browser.refresh()
-            continue
-
-        selectable_days = month.find_elements_by_css_selector(
-            'tbody td[title="Tee Times Available"] a.ui-state-default')
-
-        for calendar_day in selectable_days:
-            if int(calendar_day.get_attribute("textContent")) == day_to_book.day:
-                day_link = calendar_day
-                break
-
-        try:
-            day_link
-        except NameError:
-            browser.refresh()
-            continue
-        else:
-            break
-
-    try:
-        day_link
-    except NameError:
-        print("Cannot make tee times for the day you specified")
-        browser.close()
-        exit()
-    else:
-        day_link.click()
+    findDay(browser, settings)
 
     tee_time_rows = browser.find_elements_by_css_selector(
         'table.member_sheet_table tbody tr')
@@ -147,6 +102,54 @@ def login(browser, settings):
     browser.find_element_by_id('password').send_keys(settings['password'])
     browser.find_element_by_css_selector(
         '#login input[type="submit"]').submit()
+
+
+def findDay(browser, settings):
+    day_to_book = date(date.today().year, settings['month'], settings['day'])
+
+    start = system_time.time()
+
+    while system_time.time() - start < REFRESH_RETRY_TIME:
+        calendar_months = browser.find_elements_by_class_name(
+            'ui-datepicker-inline')
+
+        for month in calendar_months:
+            title = month.find_element_by_class_name('ui-datepicker-title')
+
+            if title.find_element_by_class_name('ui-datepicker-month').get_attribute("textContent") == month_name[day_to_book.month]:
+                month_to_find = month
+                break
+
+        try:
+            month_to_find
+        except NameError:
+            browser.refresh()
+            continue
+
+        selectable_days = month.find_elements_by_css_selector(
+            'tbody td[title="Tee Times Available"] a.ui-state-default')
+
+        for calendar_day in selectable_days:
+            if int(calendar_day.get_attribute("textContent")) == day_to_book.day:
+                day_link = calendar_day
+                break
+
+        try:
+            day_link
+        except NameError:
+            browser.refresh()
+            continue
+        else:
+            break
+
+    try:
+        day_link
+    except NameError:
+        print("Cannot make tee times for the day you specified")
+        browser.close()
+        exit()
+    else:
+        day_link.click()
 
 
 def count_open_spots(tee_time_row):
