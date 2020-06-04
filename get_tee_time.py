@@ -34,18 +34,7 @@ def main():
     WebDriverWait(browser, MAX_WAIT).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '.partner_list option')))
 
-    otherPlayers = settings['otherPlayers']
-
-    for player in otherPlayers:
-        name = player['firstName'] + ' ' + player['lastName']
-
-        try:
-            player_item = browser.find_element_by_css_selector(
-                'option[value="%s"' % name)
-        except NoSuchElementException:
-            print("Player %s is not in your Name List" % name)
-        else:
-            player_item.click()
+    addPlayers(browser, settings)
 
     player_rows = browser.find_elements_by_css_selector(
         '.request_container tr.slot_player_row')
@@ -154,6 +143,21 @@ def findFirstTime(browser, settings):
         if tee_time >= earliest_time and count_open_spots(tee_time_row) >= len(settings['otherPlayers']) + 1:
             tee_time_link.click()
             break
+
+
+def addPlayers(browser, settings):
+    otherPlayers = settings['otherPlayers']
+
+    for player in otherPlayers:
+        name = player['firstName'] + ' ' + player['lastName']
+
+        try:
+            player_item = browser.find_element_by_css_selector(
+                'option[value="%s"' % name)
+        except NoSuchElementException:
+            print("Player %s is not in your Name List" % name)
+        else:
+            player_item.click()
 
 
 def count_open_spots(tee_time_row):
