@@ -11,12 +11,11 @@ import time as system_time
 
 SETTINGS_FNAME = "settings.json"
 FORETEES_URL = "https://web.foretees.com/v5/"
+MAX_WAIT = 10
+REFRESH_RETRY_TIME = 60
 
 
 def main():
-    delay = 10  # seconds max wait
-    refresh_retry_time = 60
-
     settings = readSettingsFile()
 
     today = date.today()
@@ -30,13 +29,13 @@ def main():
 
     login(browser, settings)
 
-    WebDriverWait(browser, delay).until(
+    WebDriverWait(browser, MAX_WAIT).until(
         EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
     browser.get(FORETEES_URL + "dovecanyonclub_golf_m0/Member_select")
 
     start = system_time.time()
 
-    while system_time.time() - start < refresh_retry_time:
+    while system_time.time() - start < REFRESH_RETRY_TIME:
         calendar_months = browser.find_elements_by_class_name(
             'ui-datepicker-inline')
 
@@ -95,7 +94,7 @@ def main():
             tee_time_link.click()
             break
 
-    WebDriverWait(browser, delay).until(
+    WebDriverWait(browser, MAX_WAIT).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '.partner_list option')))
 
     otherPlayers = settings['otherPlayers']
