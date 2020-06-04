@@ -18,9 +18,6 @@ REFRESH_RETRY_TIME = 60
 def main():
     settings = readSettingsFile()
 
-    earliest_time = datetime.strptime(
-        settings['earliestTime'], '%I:%M %p').time()
-
     browser = webdriver.Firefox()
     browser.get(FORETEES_URL + "servlet/LoginPrompt?cn=dovecanyonclub")
 
@@ -32,22 +29,7 @@ def main():
 
     findDay(browser, settings)
 
-    tee_time_rows = browser.find_elements_by_css_selector(
-        'table.member_sheet_table tbody tr')
-
-    for tee_time_row in tee_time_rows:
-        try:
-            tee_time_link = tee_time_row.find_element_by_css_selector(
-                'a.teetime_button')
-        except NoSuchElementException:
-            continue
-
-        tee_time_text = tee_time_link.get_attribute("textContent")
-        tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
-
-        if tee_time >= earliest_time and count_open_spots(tee_time_row) >= len(settings['otherPlayers']) + 1:
-            tee_time_link.click()
-            break
+    findFirstTime(browser, settings)
 
     WebDriverWait(browser, MAX_WAIT).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '.partner_list option')))
@@ -150,6 +132,28 @@ def findDay(browser, settings):
         exit()
     else:
         day_link.click()
+
+
+def findFirstTime(browser, settings):
+    earliest_time = datetime.strptime(
+        settings['earliestTime'], '%I:%M %p').time()
+
+    tee_time_rows = browser.find_elements_by_css_selector(
+        'table.member_sheet_table tbody tr')
+
+    for tee_time_row in tee_time_rows:
+        try:
+            tee_time_link = tee_time_row.find_element_by_css_selector(
+                'a.teetime_button')
+        except NoSuchElementException:
+            continue
+
+        tee_time_text = tee_time_link.get_attribute("textContent")
+        tee_time = datetime.strptime(tee_time_text, '%I:%M %p').time()
+
+        if tee_time >= earliest_time and count_open_spots(tee_time_row) >= len(settings['otherPlayers']) + 1:
+            tee_time_link.click()
+            break
 
 
 def count_open_spots(tee_time_row):
