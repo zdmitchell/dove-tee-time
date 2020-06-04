@@ -10,6 +10,7 @@ import sys
 import time as system_time
 
 SETTINGS_FNAME = "settings.json"
+FORETEES_URL = "https://web.foretees.com/v5/"
 
 
 def main():
@@ -25,8 +26,7 @@ def main():
         settings['earliestTime'], '%I:%M %p').time()
 
     browser = webdriver.Firefox()
-    browser.get(
-        "https://web.foretees.com/v5/servlet/LoginPrompt?cn=dovecanyonclub")
+    browser.get(FORETEES_URL + "servlet/LoginPrompt?cn=dovecanyonclub")
 
     browser.find_element_by_id('user_name').send_keys(settings['username'])
     browser.find_element_by_id('password').send_keys(settings['password'])
@@ -35,8 +35,7 @@ def main():
 
     WebDriverWait(browser, delay).until(
         EC.presence_of_element_located((By.CLASS_NAME, 'topnav_item')))
-    browser.get(
-        "https://web.foretees.com/v5/dovecanyonclub_golf_m0/Member_select")
+    browser.get(FORETEES_URL + "dovecanyonclub_golf_m0/Member_select")
 
     start = system_time.time()
 
